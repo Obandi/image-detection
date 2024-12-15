@@ -1,0 +1,12 @@
+{"properties": [
+  {
+    "name": "imagga.api.key",
+    "type": "java.lang.String",
+    "description": "imagga.api.key"
+  },
+  {
+    "name": "imagga.api.secret",
+    "type": "java.lang.String",
+    "description": "imagga.api.secret"
+  }
+]}

@@ -1,0 +1,29 @@
+services:
+  app:
+    image: imagedetection-app
+    build: .
+    restart: always
+    ports:
+      - 8090:8090
+    networks:
+      - imagedetection-net
+    environment:
+      - spring.datasource.url=jdbc:mysql://mysqldb:3306/imagedetection?allowPublicKeyRetrieval=true    
+    depends_on:
+      - mysqldb
+    
+    volumes:
+      - .m2:/root/.m2
+      
+  mysqldb:
+    image: "mysql:8.0"
+    restart: always
+    ports:
+      - 3307:3306
+    networks:
+      - imagedetection-net  
+    environment:
+      MYSQL_DATABASE: imagedetection
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+networks:
+  imagedetection-net:
