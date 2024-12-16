@@ -100,6 +100,12 @@ public class ImageService {
         return image;
     }
 
+    /**
+     * Get all images by given list of tags
+     * @param tags
+     * @return
+     */
+    //TODO - Use native query for retrieval
     public List<Image> getImagesByTags(String tags) {
         List<Image> images = new ArrayList<>();
         List<String> tagList = Arrays.asList(tags.split(","));

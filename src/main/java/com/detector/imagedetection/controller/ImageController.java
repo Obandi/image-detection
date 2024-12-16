@@ -9,6 +9,7 @@ import com.detector.imagedetection.model.Image;
 import com.detector.imagedetection.service.ImageService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,7 +44,7 @@ public class ImageController {
     @ApiResponse(responseCode = "500", description = "Internal Server Error", 
         content = @Content) })
     @GetMapping("/images/{id}")
-    public ResponseEntity<?> getImageById(@PathVariable("id") Long id) {
+    public ResponseEntity<?> getImageById(@Parameter(description = "Id of image")@PathVariable("id") Long id) {
         if(null == imageService.getImageById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -58,7 +59,7 @@ public class ImageController {
     @ApiResponse(responseCode = "500", description = "Internal Server Error", 
         content = @Content) })
     @GetMapping("/images")
-    public ResponseEntity<?> getImagesByTags(@RequestParam(name = "objects", required = false) String objects) {
+    public ResponseEntity<?> getImagesByTags(@Parameter(description = "Comma delimited String of tags")@RequestParam(name = "objects", required = true) String objects) {
         if(StringUtils.isEmpty(objects)) {
             return ResponseEntity.badRequest().body("No query parameters detected");
         }
@@ -78,7 +79,7 @@ public class ImageController {
     }
     
 
-    @Operation(summary = "Detect Image")
+    @Operation(summary = "Detect provided Image")
     @ApiResponses(value = { 
     @ApiResponse(responseCode = "200", description = "Successful image detection processing", 
         content = { @Content(mediaType = "application/json", 
@@ -88,7 +89,7 @@ public class ImageController {
     @ApiResponse(responseCode = "500", description = "Internal Server Error", 
         content = @Content) })
     @PostMapping("/images")
-    public ResponseEntity<?> detectImage(@RequestBody DetectionRequest request) {
+    public ResponseEntity<?> detectImage(@Parameter(description = "Image detection request body")@RequestBody DetectionRequest request) {
         //Check if image url or filepath is present when object detection is true
         if(StringUtils.isEmpty(request.getFilepath()) && StringUtils.isEmpty(request.getUrl())
         && Boolean.TRUE.equals(request.getDetectObject())) {

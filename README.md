@@ -6,3 +6,7 @@
 
 # Run project in Docker
 - In the terminal, Run docker-compose build then run docker-compose up
+- Application will run on http://localhost:8090
+
+# API Documentation
+- Visit http://localhost:8090/swagger-ui/index.html to see API documentation
