@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.detector.imagedetection.exceptions.model.BadRequestException;
 import com.detector.imagedetection.model.DetectionRequest;
 import com.detector.imagedetection.model.Image;
 import com.detector.imagedetection.service.ImageService;
@@ -14,6 +15,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +47,7 @@ public class ImageController {
     @ApiResponse(responseCode = "500", description = "Internal Server Error", 
         content = @Content) })
     @GetMapping("/images/{id}")
-    public ResponseEntity<?> getImageById(@Parameter(description = "Id of image")@PathVariable("id") Long id) {
+    public ResponseEntity<Image> getImageById(@Parameter(description = "Id of image")@PathVariable("id") Long id) {
         if(null == imageService.getImageById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -59,10 +62,7 @@ public class ImageController {
     @ApiResponse(responseCode = "500", description = "Internal Server Error", 
         content = @Content) })
     @GetMapping("/images")
-    public ResponseEntity<?> getImagesByTags(@Parameter(description = "Comma delimited String of tags")@RequestParam(name = "objects", required = true) String objects) {
-        if(StringUtils.isEmpty(objects)) {
-            return ResponseEntity.badRequest().body("No query parameters detected");
-        }
+    public ResponseEntity<List<Image>> getImagesByTags(@Parameter(description = "Comma delimited String of tags")@RequestParam(name = "objects", required = true) String objects) {
         return ResponseEntity.ok().body(imageService.getImagesByTags(objects));
     }
     
@@ -74,7 +74,7 @@ public class ImageController {
     @ApiResponse(responseCode = "500", description = "Internal Server Error", 
         content = @Content) })
     @GetMapping("/images/")
-    public ResponseEntity<?> getImages() {
+    public ResponseEntity<List<Image>> getImages() {
         return ResponseEntity.ok().body(imageService.getImages());
     }
     
@@ -89,27 +89,18 @@ public class ImageController {
     @ApiResponse(responseCode = "500", description = "Internal Server Error", 
         content = @Content) })
     @PostMapping("/images")
-    public ResponseEntity<?> detectImage(@Parameter(description = "Image detection request body")@RequestBody DetectionRequest request) {
+    public ResponseEntity<Image> detectImage(@Parameter(description = "Image detection request body")@RequestBody DetectionRequest request) {
         //Check if image url or filepath is present when object detection is true
         if(StringUtils.isEmpty(request.getFilepath()) && StringUtils.isEmpty(request.getUrl())
         && Boolean.TRUE.equals(request.getDetectObject())) {
-            return ResponseEntity.badRequest().body("No image specified");
+            throw new BadRequestException("Filepath or URL not present in request");
         }
-
         //Process object detection request
         Image imageResponse = null;
         if(StringUtils.isNotEmpty(request.getFilepath())) {
-            try {
-                imageResponse = imageService.detectImageFromFile(request.getUrl(), request.getLabel(), request.getDetectObject());
-            } catch (Exception e) {
-                return ResponseEntity.internalServerError().body(e.getMessage());
-            }
+            imageResponse = imageService.detectImageFromFile(request.getFilepath(), request.getLabel(), request.getDetectObject());
         } else if(StringUtils.isNotEmpty(request.getUrl())) {
-            try {
-                imageResponse = imageService.detectImageFromUrl(request.getUrl(), request.getLabel(), request.getDetectObject());
-            } catch (Exception e) {
-                return ResponseEntity.internalServerError().body(e.getMessage());
-            }
+            imageResponse = imageService.detectImageFromUrl(request.getUrl(), request.getLabel(), request.getDetectObject());
         }
         return ResponseEntity.ok().body(imageResponse);
     }

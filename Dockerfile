@@ -5,6 +5,8 @@ FROM openjdk:17
 ARG JAR_FILE=build/libs/*.jar
 COPY ${JAR_FILE} app.jar
 
+COPY horse.jpg /data/horse.jpg
+
 # Expose the application port
 EXPOSE 8090
 

@@ -24,6 +24,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
+import com.detector.imagedetection.exceptions.model.BadRequestException;
+import com.detector.imagedetection.exceptions.model.InternalServerErrorException;
+import com.detector.imagedetection.external.ImaggaService;
 import com.detector.imagedetection.model.Image;
 import com.detector.imagedetection.model.Tag;
 import com.detector.imagedetection.repository.ImageRepository;
@@ -37,12 +40,15 @@ public class ImageService {
     @Value("${imagga.api.secret}")
     private String imaggaApiSecret;
 
-    private String imagga_endpoint_url = "https://api.imagga.com/v2/tags";
+    @Value("${imagga.api.url}")
+    private String imagga_endpoint_url;
 
     private final ImageRepository imageRepository;
+    private final ImaggaService imaggaService;
 
-    public ImageService(ImageRepository imageRepository) {
+    public ImageService(ImageRepository imageRepository, ImaggaService imaggaService) {
         this.imageRepository = imageRepository;
+        this.imaggaService = imaggaService;
     }
 
     /**
@@ -75,24 +81,25 @@ public class ImageService {
      * @throws IOException
      * @throws JSONException
      */
-    public Image detectImageFromUrl(String url, String label, boolean detectImage) throws IOException, JSONException {
-
+    public Image detectImageFromUrl(String url, String label, boolean detectImage) {
+        if(StringUtils.isEmpty(url)) {
+            throw new BadRequestException("Image URL not supplied");
+        }
         Image image = new Image();
 
-        if(detectImage && StringUtils.isNotEmpty(url)) {
-            String imaggaUrl = imagga_endpoint_url + "?image_url=" + url;
+        if(detectImage) {
+            try {
+                BufferedReader connectionInput = new BufferedReader(new InputStreamReader(imaggaService.getStsreamForImageUrl(url)));
 
-            HttpURLConnection connection = getConnection(imaggaUrl);
+                String jsonResponse = connectionInput.readLine();
+                processJsonResponse(image, jsonResponse);
 
-            int responseCode = connection.getResponseCode();
-            System.out.println("Response Code : " + responseCode);
-
-            BufferedReader connectionInput = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-
-            String jsonResponse = connectionInput.readLine();
-            processJsonResponse(image, jsonResponse);
-
-            connectionInput.close();
+                connectionInput.close();
+            } catch (IOException e) {
+                throw new InternalServerErrorException(e.getMessage());
+            } catch (JSONException e) {
+                throw new InternalServerErrorException(e.getMessage());
+            }
         }
         setImageLabel(label, image);
         imageRepository.save(image);
@@ -130,11 +137,15 @@ public class ImageService {
      * @throws IOException
      * @throws JSONException
      */
-    public Image detectImageFromFile(String filepath, String label, boolean detectImage) throws IOException, JSONException {
+    public Image detectImageFromFile(String filepath, String label, boolean detectImage) {
+        if(StringUtils.isEmpty(filepath)) {
+            throw new BadRequestException("Image filepath not supplied");
+        }
         Image image = new Image();
 
-        if(detectImage && StringUtils.isNotEmpty(filepath)) {
-            File fileToUpload = new File(filepath);
+        if(detectImage) {
+            try {
+                File fileToUpload = new File(filepath);
 
             String crlf = "\r\n";
             String twoHyphens = "--";
@@ -187,6 +198,11 @@ public class ImageService {
             inputStream.close();
             responseStream.close();
             connection.disconnect();
+            } catch (IOException e) {
+                throw new InternalServerErrorException(e.getMessage());
+            } catch (JSONException e) {
+                throw new InternalServerErrorException(e.getMessage());
+            }
         }
 
         setImageLabel(label, image);

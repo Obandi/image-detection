@@ -8,5 +8,10 @@
     "name": "imagga.api.secret",
     "type": "java.lang.String",
     "description": "imagga.api.secret"
+  },
+  {
+    "name": "imagga.api.url",
+    "type": "java.lang.String",
+    "description": "A description for 'imagga.api.url'"
   }
 ]}
